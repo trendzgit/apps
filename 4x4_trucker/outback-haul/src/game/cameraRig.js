@@ -15,6 +15,9 @@ export class CameraRig {
     this.look = { yaw: 0, pitch: 0 };
     this.drag = { on: false, id: 0, x: 0, y: 0 };
     this.smooth = { y: 0, pitch: 0 };
+    this.onFoot = false;
+    this.footYaw = 0;
+    this.footPitch = 0;
 
     // everything that belongs to the cockpit hangs off this anchor, which follows the car smoothly
     this.anchor = new Group();
@@ -40,7 +43,10 @@ export class CameraRig {
       const dx = e.clientX - d.x, dy = e.clientY - d.y;
       d.x = e.clientX;
       d.y = e.clientY;
-      if (this.mode > 0) {
+      if (this.onFoot) {
+        this.footYaw -= dx * 0.006;
+        this.footPitch = Math.max(-0.28, Math.min(0.72, this.footPitch + dy * 0.0045));
+      } else if (this.mode > 0) {
         this.look.yaw = Math.max(-1.75, Math.min(1.75, this.look.yaw - dx * 0.007));
         this.look.pitch = Math.max(-0.6, Math.min(0.6, this.look.pitch + dy * 0.005));
       }
@@ -49,6 +55,40 @@ export class CameraRig {
   }
 
   get mirrorTexture() { return this.mirrorTarget ? this.mirrorTarget.texture : null; }
+
+  setOnFoot(enabled, player = null, visual = null) {
+    this.onFoot = enabled;
+    if (enabled && visual) {
+      visual.extOn = true;
+      visual.group.traverse((o) => { if (o.isMesh && !o.userData.hidden) o.visible = true; });
+    }
+    if (enabled && player) {
+      this.footYaw = player.h;
+      this.footPitch = 0.08;
+    }
+    document.body.classList.toggle('cp', !enabled && this.mode > 1);
+    document.body.classList.toggle('on-foot', enabled);
+  }
+
+  get movementYaw() { return this.footYaw; }
+
+  updateOnFoot(dt, player, heightAt) {
+    const { camera } = this.stage;
+    const distance = 5.2;
+    const target = new Vector3(player.x, player.y + 1.18, player.z);
+    const desired = new Vector3(
+      player.x - Math.sin(this.footYaw) * distance,
+      player.y + 2.55 + this.footPitch * 1.8,
+      player.z - Math.cos(this.footYaw) * distance,
+    );
+    desired.y = Math.max(desired.y, heightAt(desired.x, desired.z) + 1.15);
+    camera.position.lerp(desired, 1 - Math.exp(-7 * dt));
+    const lookTarget = target.clone().add(new Vector3(Math.sin(this.footYaw) * 1.2, this.footPitch * 1.4, Math.cos(this.footYaw) * 1.2));
+    camera.lookAt(lookTarget);
+    this.anchor.visible = false;
+    const fov = Math.min(82, Math.max(60, 114.6 * Math.atan(0.916 / camera.aspect)));
+    if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix(); }
+  }
 
   cycle() {
     this.mode = (this.mode + 1) % 4;
@@ -133,7 +173,7 @@ export class CameraRig {
   /** Render the frame (and, every other frame in cockpit view, the rear mirror first). */
   render(state) {
     const { renderer, scene, camera } = this.stage;
-    if (this.mode > 1 && this.mirrorTarget && (this.mirrorToggle ^= 1)) {
+    if (!this.onFoot && this.mode > 1 && this.mirrorTarget && (this.mirrorToggle ^= 1)) {
       const mc = this.mirrorCamera;
       mc.position.copy(camera.position);
       mc.lookAt(camera.position.x - Math.sin(state.h) * 60, camera.position.y - 1, camera.position.z - Math.cos(state.h) * 60);

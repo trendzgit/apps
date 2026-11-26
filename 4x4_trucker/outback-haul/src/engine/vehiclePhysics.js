@@ -79,6 +79,16 @@ export class VehiclePhysics {
     this.flippedTime = 0;
   }
 
+  /** Freeze the vehicle cleanly when the player gets out; physics resumes on re-entry. */
+  park() {
+    if (!this.chassis) return;
+    this.chassis.velocity.setZero();
+    this.chassis.angularVelocity.setZero();
+    this.chassis.force.setZero();
+    this.chassis.torque.setZero();
+    this.steer = 0;
+  }
+
   /**
    * @param def      vehicle definition
    * @param visual   {group, wheels[]} three.js objects to pose

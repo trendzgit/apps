@@ -67,8 +67,9 @@ function resolvePoint(grid, p, vel, radius) {
       const dx = p.x - c.x, dz = p.z - c.z;
       const d2 = dx * dx + dz * dz;
       if (d2 >= R * R) continue;
-      const d = Math.sqrt(d2) || 1;
-      nx = dx / d; nz = dz / d;
+      const d = Math.sqrt(d2);
+      if (d > 1e-8) { nx = dx / d; nz = dz / d; }
+      else { nx = 1; nz = 0; } // deterministic escape direction when a point lands at the exact centre
       p.x = c.x + nx * R;
       p.z = c.z + nz * R;
     } else {

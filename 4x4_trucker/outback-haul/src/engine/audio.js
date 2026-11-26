@@ -74,6 +74,14 @@ export class EngineAudio {
     src.start(t, Math.random(), 0.45);
   }
 
+  /** Quiet the engine and tyre loops while the player is walking. */
+  park() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.engineGain.gain.setTargetAtTime(0, t, 0.12);
+    this.roadGain.gain.setTargetAtTime(0, t, 0.12);
+  }
+
   /** Two-tone car horn; quieter the further away the car is. */
   honk(distance = 0) {
     if (!this.ctx) return;

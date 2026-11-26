@@ -7,7 +7,7 @@ export class Hud {
       speed: $('sp'), vehicle: $('vn'), clock: $('clk'), level: $('lv'), cash: $('cash'), mapName: $('mapname'),
       msg: $('msg'), jobBox: $('jb'), arrow: $('ar'), jobText: $('jt'),
       dialog: $('lvl'), dialogTitle: $('lt'), dialogBody: $('lb'), next: $('nx'), free: $('fr'),
-      home: $('home'),
+      home: $('home'), mode: $('modeTag'), interact: $('interact'),
     };
     this._toast = 0;
   }
@@ -18,6 +18,11 @@ export class Hud {
   setMapName(name) { this.el.mapName.textContent = name; }
   setStats(level, cash) { this.el.level.textContent = level; this.el.cash.textContent = cash; }
   setHomeLabel(name) { this.el.home.setAttribute('aria-label', 'Back to ' + name); }
+  setMode(mode) { this.el.mode.textContent = mode === 'foot' ? 'ON FOOT' : 'DRIVING'; }
+  setInteract(label, visible) {
+    this.el.interact.textContent = label;
+    this.el.interact.classList.toggle('visible', !!visible);
+  }
 
   toast(text) {
     const m = this.el.msg;
