@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>Outback Haul</title>
+</head>
+<body>
+  <!-- HUD -->
+  <div class="box" id="L"><span id="sp">0</span> km/h &nbsp;<span id="vn"></span> · <span id="clk"></span>
+    <div id="jb"><span id="ar">▲</span> <span id="jt"></span></div>
+  </div>
+  <div class="box" id="C"><span id="mapname"></span> · Lv <span id="lv">1</span> · <span id="cash">0</span> cr</div>
+  <div class="box" id="msg"></div>
+
+  <div class="side">
+    <button id="sw" aria-label="Switch vehicle">🚙</button>
+    <button id="job" aria-label="Delivery job">📦</button>
+    <button id="shop" aria-label="Buy next vehicle">🛒</button>
+    <button id="cm" aria-label="Camera">🎥</button>
+    <button id="mu" aria-label="Sound">🔊</button>
+    <button id="home" aria-label="Back to start">⌂</button>
+    <button id="maps-btn" aria-label="Choose map">🗺</button>
+  </div>
+
+  <canvas id="mm" width="256" height="256"></canvas>
+
+  <!-- level complete -->
+  <div class="box" id="lvl">
+    <b id="lt" style="font-size:18px"></b>
+    <div id="lb" style="margin:6px 0 10px"></div>
+    <button class="tx" id="nx">Next level</button> <button class="tx" id="fr">Free roam</button>
+  </div>
+
+  <!-- touch pads -->
+  <div class="pad" style="left:calc(14px + env(safe-area-inset-left))"><button data-k="l">◀</button><button data-k="r">▶</button></div>
+  <div class="pad" style="right:calc(14px + env(safe-area-inset-right))"><button data-k="b">▼</button><button data-k="g">▲</button></div>
+
+  <!-- map select -->
+  <div id="maps" class="screen" style="display:none">
+    <div class="screen-inner">
+      <h1>Outback Haul</h1>
+      <p class="sub">Choose a map. Cash and vehicles carry over; each map has its own level.</p>
+      <div id="mapList"></div>
+      <p id="mapsClose" class="hint" style="display:none">Tap outside a card or press Esc to go back</p>
+    </div>
+  </div>
+  <div id="loading" class="screen" style="display:none"><div class="screen-inner"><h1 id="loadingText">Loading…</h1></div></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
