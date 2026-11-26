@@ -16,9 +16,10 @@ The entry page uses an import map to load Three.js and cannon-es from jsDelivr. 
 - Stop your current vehicle and press **E** to exit.
 - On foot, movement defaults to **sprint**. Use **WASD** or **arrow keys**; hold **Ctrl** to walk more slowly.
 - Press **E** beside your parked player vehicle to get back in.
-- Press **E** beside a street vehicle to take it. The driver exits and runs away; the vehicle is removed from traffic and becomes player-controlled.
+- Press **E** beside a street vehicle to take it. The driver and any passengers exit through animated doors; the traffic vehicle is removed from traffic and becomes player-controlled.
 - Previously used player vehicles remain parked in the world and can be re-entered.
-- Drag the mouse on the scene to orbit the on-foot camera.
+- On foot, the camera follows from high above and just behind the character; drag on the scene to orbit it.
+- Vehicle doors swing open and close during entry and exit. On a street-car takeover, the occupants leave through their seat doors and run away.
 
 ## Available player vehicles
 

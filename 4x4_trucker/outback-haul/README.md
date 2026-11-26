@@ -6,7 +6,7 @@ single-file build into a readable, multi-map project.
 * **3 maps** - Outback (the original), Metro City (procedural city), Green Valley (farmland)
 * Deliver parcels, earn credits, level up **per map**, buy vehicles that work on **every** map
 * **Ambient traffic** on the City map: cars drive the road grid, obey traffic lights, turn at junctions, brake for you and honk
-* **On-foot exploration**: leave a stopped vehicle, walk or sprint (hold Shift, or hold the RUN / ⚡ control) in third person, and return to the driver seat with a proximity interaction
+* **On-foot exploration**: leave a stopped vehicle, sprint by default or hold Ctrl / WALK to slow down, with a high overhead follow camera and nearby vehicle interaction
 * Day/night cycle, 4 camera views incl. a working cockpit with gauges and a rear-view mirror
 * Touch controls + keyboard. No asset files required.
 
@@ -24,7 +24,7 @@ To publish the updated single-file game at the existing `4x4_trucker/index.html`
 URL options: `?map=city` (skip the menu; ids: `outback`, `city`, `farmland`), `?q=low` (no shadows/AA/mirror),
 `?traffic=N` (number of AI cars; `0` = none; low quality uses fewer by default), `?debug` (exposes `window.__game` for the console, e.g. `__game.update(1/60)` to fast-forward physics).
 
-Controls: arrows / WASD drive; stop and press `E` to exit; use WASD / arrows to walk, `Shift` to sprint, and drag the mouse to orbit the on-foot camera; press `E` beside your vehicle to re-enter. `R` returns to start, `C` cycles vehicle cameras, `M` mutes, `Esc` opens the map menu. On touch screens, the directional pads work for walking and the ⚡ pad sprints.
+Controls: arrows / WASD drive; stop and press `E` to exit; on foot use WASD / arrows to sprint by default, hold `Ctrl` to walk, and drag to orbit the overhead camera; press `E` beside parked or traffic vehicles to enter/take them. `R` returns to start, `C` cycles vehicle cameras, `M` mutes, `Esc` opens the map menu. On touch screens, the directional pads work for walking and the ⚡ pad sprints.
 
 ## Project layout
 
@@ -91,13 +91,13 @@ Maps opt in with a `traffic` block (City does): `traffic: { kind: 'grid', pitch,
   re-spawned ahead, out of sight, so density stays high where you are.
 * Tuning constants (speeds, gaps, light timing) are at the top of `trafficSystem.js` / `gridNetwork.js`.
 
-Not covered yet: lane changes/overtaking, emergency vehicles, non-player pedestrians, traffic on non-grid maps (Outback / Green Valley).
+Not covered yet: ambient pedestrian crowds, lane changes/overtaking, emergency vehicles, and traffic on non-grid maps (Outback / Green Valley).
 
 ## On-foot exploration
 
-The player can leave a stopped vehicle with the physical `KeyE` shortcut (or the on-screen interaction button), move with WASD or the arrow keys, sprint with `Shift`, and re-enter when close to the parked vehicle. The shortcut listens to both `event.code` (`KeyE`) and the normalized key value (`e`/`E`), so it works across keyboard layouts and Caps Lock. Movement is camera-relative; drag on the canvas to orbit the third-person camera. On-foot movement resolves against map colliders, ambient traffic and the player's parked vehicle.
+The player can leave a stopped vehicle with the physical `KeyE` shortcut (or the on-screen interaction button), sprint by default using WASD / arrow keys, and hold `Ctrl` (or touch WALK) to move at walking pace. The camera follows from high above and just behind the character; drag on the canvas to orbit it. On-foot movement resolves against map colliders, ambient traffic and parked vehicles. The shortcut listens to both `event.code` (`KeyE`) and the normalized key value (`e`/`E`).
 
-The current character is a procedural low-poly rig with a simple idle/walk/run limb cycle and visible enter/exit transition poses. It deliberately uses no external model or animation downloads. It is a first playable implementation, not a full GTA character system: skinned character assets, authored animation clips, animated vehicle doors, jumping, combat and NPC pedestrians remain future work.
+The character is a procedural low-poly rig with a facial detail, clothing variations, optional caps/backpacks, and idle/walk/run limb animation. Player vehicle doors have hinged open/close animation. Street-car takeovers generate one to four seat occupants according to vehicle class; each occupant exits through a side door and flees. Ambient pedestrian crowds, authored skinned animation clips, jumping and combat remain future work.
 
 ## Adding / tuning vehicles
 
@@ -129,21 +129,21 @@ Cash and owned vehicles are shared; levels are per map. An old `outbackhaul1` sa
 
 ## Next steps (not built yet)
 
-Skinned character assets and authored animation clips, animated vehicle doors, jumping, ambient pedestrian crowds, police/wanted system, weather, damage, more job types (taxi, races), vehicle upgrades, traffic for the rural maps.
+Ambient pedestrian crowds, authored skinned animation clips, jumping, police/wanted system, weather, vehicle damage, more job types (taxi, races), vehicle upgrades, and traffic for the rural maps.
 
 
 ## Gameplay roadmap status
 
 | Feature | Status | Description |
 |---|---|---|
-| Walking on foot, enter/exit cars | First playable implementation | This is the real jump from a driving game to GTA. It now has a third-person character controller, procedural locomotion animation, vehicle proximity interaction and enter/exit transitions. Authored animation clips and animated doors remain future polish. |
+| Walking on foot, enter/exit cars | Expanded playable implementation | Overhead follow camera, sprint-by-default movement, hinged vehicle doors, varied procedural pedestrians, and multi-occupant traffic-car takeovers with fleeing passengers. |
 
 
 ## On-foot controls and street vehicles
 
 - Stop your current vehicle and press **E** to exit.
 - On foot, **WASD / arrow keys sprint by default**. Hold **Ctrl** on desktop (or the on-screen **WALK** button on mobile) to move at walking pace.
-- Move near a street vehicle and press **E** to take it. The ambient traffic car is removed from its lane, a procedural driver exits and runs away, and the player receives a drivable vehicle with the matching traffic type and paint.
+- Move near a street vehicle and press **E** to take it. Its traffic instance is removed, one or more occupants exit through animated doors and flee, and the player receives a drivable vehicle with the matching traffic type and paint.
 - Previously used player vehicles remain parked and can be entered again with **E**.
 - Street takeovers currently support sedan, hatchback, van, and truck traffic classes.
 

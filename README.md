@@ -12,7 +12,9 @@ Game URL after deployment: `/4x4_trucker/`
 
 - Stop and press **E** to exit your current vehicle.
 - On foot, **WASD / arrow keys sprint by default**. Hold **Ctrl** on desktop or hold the on-screen **WALK** button on mobile to walk.
-- Approach a street vehicle and press **E** to take it. Its traffic instance is removed, an occupant exits and runs away, and the vehicle becomes player-controlled.
+- Approach a street vehicle and press **E** to take it. Its traffic instance is removed, one to four occupants (depending on vehicle class) exit through animated doors and flee, and the vehicle becomes player-controlled.
+- The on-foot camera sits high above and just behind the player. Vehicle doors animate on exit, entry and street takeovers.
+- Pedestrians have varied clothing, skin tones, caps and backpacks; sedans and hatchbacks can carry up to four occupants.
 - Previously used vehicles remain parked and can be entered again with **E**.
 
 ## Vehicle assets

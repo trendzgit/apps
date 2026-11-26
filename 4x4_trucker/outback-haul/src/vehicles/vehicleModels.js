@@ -8,8 +8,65 @@ import { lambert } from '../util/materials.js';
 /** @returns {{group: Group, wheels: Mesh[], cockpit: Group|null, lamp: any, extOn: boolean|undefined}} */
 export function createVehicleVisual(def) {
   const visual = def.detailed ? buildDetailedCar(def) : buildBoxVehicle(def);
+  visual.doorRig = buildDoorRig(visual.group, def);
   visual.group.rotation.order = 'YXZ';
   return visual;
+}
+
+/** Procedural hinged doors keep the feature available even when an optional GLB fails. */
+function buildDoorRig(parent, def) {
+  if (def.quad) return {};
+  const W = def.width, L = def.length;
+  const cabinLength = def.cabin ? def.cabin.length * L : L * 0.68;
+  const cabinZ = def.cabin ? (def.cabin.z || 0) * L : 0;
+  const doorLength = Math.max(0.72, Math.min(1.04, cabinLength * 0.38));
+  const doorY = def.cabin?.height ? Math.max(0.95, Math.min(1.28, 0.68 + def.cabin.height * 0.25)) : 1.04;
+  const paint = new MeshPhongMaterial({ color: def.color, shininess: 75, specular: 0x555555 });
+  const glass = new MeshPhongMaterial({ color: 0x263b49, shininess: 105, specular: 0x8095a5 });
+  const trim = new MeshPhongMaterial({ color: 0x171a1d, shininess: 35 });
+  const chrome = new MeshPhongMaterial({ color: 0xbcc3c8, shininess: 90 });
+  const doors = {};
+  const addDoor = (id, side, hingeZ, length) => {
+    const hinge = new Group();
+    hinge.name = 'animated-door-' + id;
+    hinge.position.set(side * (W / 2 + 0.025), doorY, hingeZ);
+    hinge.userData.openAngle = side < 0 ? 1.03 : -1.03;
+
+    // Painted lower skin and tinted upper window, each slightly proud of the body.
+    const lower = new Mesh(new BoxGeometry(0.075, 0.42, length), paint);
+    lower.position.set(side * 0.035, -0.23, -length / 2);
+    lower.castShadow = true;
+    lower.userData.keepWhenModelLoaded = true;
+    hinge.add(lower);
+    const window = new Mesh(new BoxGeometry(0.055, 0.28, length * 0.9), glass);
+    window.position.set(side * 0.035, 0.13, -length / 2);
+    window.castShadow = true;
+    window.userData.keepWhenModelLoaded = true;
+    hinge.add(window);
+    const belt = new Mesh(new BoxGeometry(0.09, 0.045, length * 0.96), trim);
+    belt.position.set(side * 0.045, -0.015, -length / 2);
+    belt.userData.keepWhenModelLoaded = true;
+    hinge.add(belt);
+    const handle = new Mesh(new BoxGeometry(0.035, 0.045, 0.15), chrome);
+    handle.position.set(side * 0.08, -0.19, -length * 0.68);
+    handle.userData.keepWhenModelLoaded = true;
+    hinge.add(handle);
+    parent.add(hinge);
+    doors[id] = hinge;
+  };
+
+  const frontHingeZ = cabinZ + cabinLength * 0.18 + doorLength * 0.38;
+  for (const side of [-1, 1]) {
+    addDoor(side < 0 ? 'driver' : 'passenger', side, frontHingeZ, doorLength);
+  }
+  // Rear doors are useful for sedans, hatchbacks and vans; short cabs stay two-seater.
+  if (cabinLength > 2.0) {
+    const rearHingeZ = cabinZ - cabinLength * 0.12 + doorLength * 0.38;
+    for (const side of [-1, 1]) {
+      addDoor(side < 0 ? 'rearDriver' : 'rearPassenger', side, rearHingeZ, doorLength * 0.9);
+    }
+  }
+  return doors;
 }
 
 function addBox(parent, w, h, d, material, x, y, z) {
@@ -127,7 +184,7 @@ export function tryLoadGlb(def, visual) {
       const keep = new Set();
       visual.cockpit?.traverse((o) => keep.add(o));
       visual.group.traverse((o) => {
-        if (o.isMesh && !keep.has(o)) { o.visible = false; o.userData.hidden = true; }
+        if (o.isMesh && !keep.has(o) && !o.userData.keepWhenModelLoaded) { o.visible = false; o.userData.hidden = true; }
       });
 
       model.scale.set(scaleX, scaleY, scaleZ);

@@ -14,47 +14,75 @@ const BACK_SPEED = 2.0;
  * procedural so walking is playable before a skinned GLB character pack is added.
  */
 export class CharacterController {
-  constructor(scene) {
+  constructor(scene, appearance = {}) {
     this.state = { x: 0, z: 0, h: 0, v: 0, y: 0, hit: 0 };
     this.velocity = { x: 0, z: 0 };
     this.phase = 0;
     this.action = null;
+    this.appearance = appearance;
     this.root = new Group();
     this.root.visible = false;
     scene.add(this.root);
-    this.rig = this._buildRig();
+    this.rig = this._buildRig(appearance);
     this.root.add(this.rig.group);
   }
 
-  _buildRig() {
+  _buildRig(appearance = {}) {
     const group = new Group();
-    const skin = new MeshStandardMaterial({ color: 0xc98f68, roughness: 0.92 });
-    const shirt = new MeshStandardMaterial({ color: 0x315b73, roughness: 0.88 });
-    const trousers = new MeshStandardMaterial({ color: 0x303944, roughness: 0.95 });
-    const shoes = new MeshStandardMaterial({ color: 0x262321, roughness: 1 });
-    const hair = new MeshStandardMaterial({ color: 0x29231f, roughness: 1 });
+    const material = (color, roughness = 0.9) => new MeshStandardMaterial({ color, roughness });
+    const skin = material(appearance.skin ?? 0xc98f68);
+    const shirt = material(appearance.shirt ?? 0x315b73, 0.88);
+    const trousers = material(appearance.trousers ?? 0x303944, 0.95);
+    const shoes = material(appearance.shoes ?? 0x262321, 1);
+    const hair = material(appearance.hair ?? 0x29231f, 1);
+    const detail = material(appearance.detail ?? 0xd0b47c, 0.82);
+    const eyeWhite = material(0xf1eee7, 0.72);
+    const eyeDark = material(0x17191b, 0.7);
 
-    const makeMesh = (geometry, material, parent, x, y, z) => {
-      const mesh = new Mesh(geometry, material);
+    const makeMesh = (geometry, mat, parent, x, y, z) => {
+      const mesh = new Mesh(geometry, mat);
       mesh.position.set(x, y, z);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       parent.add(mesh);
       return mesh;
     };
-    const makeLimb = (parent, x, y, length, radius, material) => {
+    const makeLimb = (parent, x, y, length, radius, mat) => {
       const pivot = new Group();
       pivot.position.set(x, y, 0);
-      makeMesh(new CylinderGeometry(radius * 0.82, radius, length, 8), material, pivot, 0, -length / 2, 0);
+      makeMesh(new CylinderGeometry(radius * 0.82, radius, length, 9), mat, pivot, 0, -length / 2, 0);
       parent.add(pivot);
       return pivot;
     };
 
-    makeMesh(new BoxGeometry(0.42, 0.28, 0.25), trousers, group, 0, 0.82, 0); // pelvis
+    // Torso, collar, belt and pocket give pedestrians a more readable silhouette.
+    makeMesh(new BoxGeometry(0.42, 0.28, 0.25), trousers, group, 0, 0.82, 0);
     const torso = makeMesh(new BoxGeometry(0.48, 0.58, 0.27), shirt, group, 0, 1.19, 0);
-    torso.geometry.translate(0, 0, 0);
-    makeMesh(new SphereGeometry(0.16, 12, 10), skin, group, 0, 1.59, 0.015);
-    makeMesh(new SphereGeometry(0.165, 12, 8), hair, group, 0, 1.67, -0.025);
+    makeMesh(new BoxGeometry(0.31, 0.08, 0.285), detail, group, 0, 1.47, 0.005);
+    makeMesh(new BoxGeometry(0.43, 0.055, 0.28), shoes, group, 0, 0.94, 0);
+    makeMesh(new BoxGeometry(0.13, 0.17, 0.025), detail, group, -0.13, 1.28, 0.145);
+
+    // Neck, head, ears, eyes and nose make the face legible from the new overhead camera.
+    makeMesh(new CylinderGeometry(0.075, 0.085, 0.15, 10), skin, group, 0, 1.49, 0.005);
+    makeMesh(new SphereGeometry(0.16, 14, 12), skin, group, 0, 1.63, 0.015);
+    makeMesh(new SphereGeometry(0.166, 12, 8), hair, group, 0, 1.71, -0.035);
+    for (const side of [-1, 1]) {
+      makeMesh(new SphereGeometry(0.045, 8, 7), skin, group, side * 0.155, 1.61, 0.005);
+      makeMesh(new SphereGeometry(0.026, 8, 6), eyeWhite, group, side * 0.057, 1.635, 0.151);
+      makeMesh(new SphereGeometry(0.012, 7, 6), eyeDark, group, side * 0.057, 1.635, 0.174);
+    }
+    makeMesh(new SphereGeometry(0.027, 8, 6), skin, group, 0, 1.585, 0.17);
+
+    if (appearance.cap) {
+      const cap = material(appearance.cap, 0.92);
+      makeMesh(new CylinderGeometry(0.145, 0.16, 0.095, 10), cap, group, 0, 1.77, -0.015);
+      makeMesh(new BoxGeometry(0.23, 0.035, 0.14), cap, group, 0, 1.735, 0.12);
+    }
+    if (appearance.bag) {
+      const bag = material(appearance.bag, 0.95);
+      makeMesh(new BoxGeometry(0.31, 0.39, 0.16), bag, group, 0, 1.2, -0.205);
+      for (const side of [-1, 1]) makeMesh(new BoxGeometry(0.045, 0.42, 0.05), bag, group, side * 0.19, 1.2, -0.12);
+    }
 
     const arms = [], forearms = [], legs = [], shins = [];
     for (const side of [-1, 1]) {
@@ -69,6 +97,7 @@ export class CharacterController {
       makeMesh(new BoxGeometry(0.16, 0.1, 0.27), shoes, shin, 0, -0.4, 0.07);
       legs.push(leg); shins.push(shin);
     }
+    group.scale.y = appearance.height ?? 1;
     return { group, torso, arms, forearms, legs, shins };
   }
 

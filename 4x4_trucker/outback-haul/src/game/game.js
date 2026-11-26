@@ -49,6 +49,14 @@ export function createGame() {
   let activeVehicleDef = VEHICLES[0];
   const parkedVehicles = [];
   const streetDrivers = [];
+  const doorAnimations = [];
+  const pedestrianLooks = [
+    { skin: 0xc98f68, shirt: 0x315b73, trousers: 0x303944, hair: 0x29231f, shoes: 0x262321, height: 1.0 },
+    { skin: 0x8e5d42, shirt: 0x8b3d32, trousers: 0x263f35, hair: 0x171412, shoes: 0x292725, cap: 0xd2a13a, height: 0.96 },
+    { skin: 0xe0b18b, shirt: 0x547a43, trousers: 0x414b5a, hair: 0x6b4930, shoes: 0x252525, bag: 0x9d6b34, height: 1.06 },
+    { skin: 0x9a674d, shirt: 0x674e87, trousers: 0x262b35, hair: 0x24201e, shoes: 0x35312e, cap: 0x253c56, height: 1.02 },
+    { skin: 0xd5a27d, shirt: 0xb67a2b, trousers: 0x454545, hair: 0x4a3023, shoes: 0x1f242b, bag: 0x435b68, height: 0.93 },
+  ];
   let gameMode = 'vehicle'; // vehicle | foot | entering | exiting
   const playerInfo = { x: 0, z: 0, h: 0, v: 0, length: 4.4, width: 1.8 };
 
@@ -58,12 +66,46 @@ export function createGame() {
     ...parkedVehicles.map((parked) => ({ x: parked.state.x, z: parked.state.z, h: parked.state.h, length: parked.def.length, width: parked.def.width })),
   ];
 
+  function animateDoor(targetVisual, seat, open, duration = 0.26, delay = 0) {
+    const door = targetVisual?.doorRig?.[seat];
+    if (!door) return;
+    // A new opening starts a fresh sequence. A delayed close is queued alongside it
+    // and must not cancel the opening tween before it has had a chance to run.
+    if (open || delay <= 0) {
+      for (let i = doorAnimations.length - 1; i >= 0; i--) {
+        if (doorAnimations[i].door === door) doorAnimations.splice(i, 1);
+      }
+    }
+    doorAnimations.push({
+      door,
+      from: open ? door.rotation.y : (delay > 0 ? door.userData.openAngle : door.rotation.y),
+      to: open ? door.userData.openAngle : 0,
+      elapsed: 0,
+      delay: Math.max(0, delay),
+      duration: Math.max(0.08, duration),
+    });
+  }
+
+  function updateDoorAnimations(dt) {
+    for (let i = doorAnimations.length - 1; i >= 0; i--) {
+      const track = doorAnimations[i];
+      if (!track.door.parent) { doorAnimations.splice(i, 1); continue; }
+      track.elapsed += dt;
+      if (track.elapsed < track.delay) continue;
+      const p = Math.min(1, (track.elapsed - track.delay) / track.duration);
+      const eased = p * p * (3 - 2 * p);
+      track.door.rotation.y = track.from + (track.to - track.from) * eased;
+      if (p >= 1) doorAnimations.splice(i, 1);
+    }
+  }
+
   // ---- vehicles ---------------------------------------------------------------------------
   function selectVehicle(index) {
     vehicleIndex = index % VEHICLES.length;
     const def = VEHICLES[vehicleIndex];
     activeVehicleDef = def;
     if (visual) {
+      doorAnimations.length = 0;
       stage.scene.remove(visual.group);
       cameraRig.setCockpit(visual.cockpit, null);
       disposeTree(visual.group);
@@ -133,6 +175,7 @@ export function createGame() {
     visual.group.rotation.set(0, state.h, 0);
     vehiclePhysics.spawn(def, state.x, state.y + 1.4, state.z, state.h);
     hud.setVehicle(def.name);
+    return visual;
   }
 
   function activateParkedVehicle(index) {
@@ -158,23 +201,40 @@ export function createGame() {
     return bestIndex >= 0 ? { index: bestIndex, distance: bestDistance } : null;
   }
 
-  function spawnStreetDriver(stolen) {
-    const npc = new CharacterController(stage.scene);
-    const side = -1;
+  function spawnStreetOccupants(stolen, targetVisual) {
+    const seats = [
+      { id: 'driver', side: -1, localX: -0.22, localZ: 0.34 },
+      { id: 'passenger', side: 1, localX: 0.22, localZ: 0.34 },
+      { id: 'rearDriver', side: -1, localX: -0.22, localZ: -0.56 },
+      { id: 'rearPassenger', side: 1, localX: 0.22, localZ: -0.56 },
+    ];
+    const available = stolen.type >= 2 ? seats.slice(0, 2) : seats;
+    const count = Math.max(1, Math.min(available.length, stolen.occupants || 1));
     const c = Math.cos(stolen.h), sn = Math.sin(stolen.h);
-    const localX = side * (stolen.width / 2 + 0.82);
-    const x = stolen.x + c * localX;
-    const z = stolen.z - sn * localX;
-    npc.teleport(x, z, stolen.h, map);
-    npc.startAction('exit', {
-      duration: 0.7,
-      moveX: c * side * 0.65,
-      moveZ: -sn * side * 0.65,
-    });
-    streetDrivers.push({
-      npc, age: 0,
-      escape: { x: -sn, y: -c }, // turn and run down the road, clear of the driver's door
-    });
+
+    for (let i = 0; i < count; i++) {
+      const seat = available[i];
+      const npc = new CharacterController(stage.scene, pedestrianLooks[(Math.random() * pedestrianLooks.length) | 0]);
+      const x = stolen.x + c * seat.localX + sn * seat.localZ;
+      const z = stolen.z - sn * seat.localX + c * seat.localZ;
+      const outwardX = c * seat.side;
+      const outwardZ = -sn * seat.side;
+      npc.teleport(x, z, Math.atan2(outwardX, outwardZ), map);
+      npc.startAction('exit', {
+        duration: 0.72 + i * 0.08,
+        moveX: outwardX * 1.18,
+        moveZ: outwardZ * 1.18,
+      });
+      animateDoor(targetVisual, seat.id, true, 0.22, i * 0.08);
+      animateDoor(targetVisual, seat.id, false, 0.24, 1.05 + i * 0.08);
+      streetDrivers.push({
+        npc, age: 0,
+        escape: {
+          x: outwardX * 0.72 + sn * 0.32,
+          y: outwardZ * 0.72 + c * 0.32,
+        },
+      });
+    }
   }
 
   function updateStreetDrivers(dt) {
@@ -182,7 +242,7 @@ export function createGame() {
       const driver = streetDrivers[i];
       driver.age += dt;
       if (driver.npc.action) driver.npc.updateAction(dt, map);
-      else if (driver.age < 4.8) {
+      else if (driver.age < 5.4) {
         driver.npc.update(dt, driver.escape, 0, map, colliders, traffic, vehicleObstacle(), true);
       } else {
         stage.scene.remove(driver.npc.root);
@@ -193,6 +253,7 @@ export function createGame() {
   }
 
   function clearParkedVehicles() {
+    doorAnimations.length = 0;
     for (const parked of parkedVehicles) {
       stage.scene.remove(parked.visual.group);
       removeCockpit(parked.visual);
@@ -293,6 +354,7 @@ export function createGame() {
         x, z,
         moveX: c * awayLocalX + s * awayLocalZ,
         moveZ: -s * awayLocalX + c * awayLocalZ,
+        door: o.side < 0 ? 'driver' : (o.side > 0 ? 'passenger' : 'driver'),
       };
     }
     return null;
@@ -315,6 +377,8 @@ export function createGame() {
       character.root.rotation.y = character.state.h;
     }
     character.startAction('enter', { duration, moveX: dx, moveZ: dz });
+    animateDoor(visual, 'driver', true, 0.22);
+    animateDoor(visual, 'driver', false, 0.24, duration + 0.12);
   }
 
   function interact() {
@@ -334,6 +398,8 @@ export function createGame() {
       audio.park();
       character.teleport(exit.x, exit.z, state.h, map);
       character.startAction('exit', { duration: 0.72, moveX: exit.moveX, moveZ: exit.moveZ });
+      animateDoor(visual, exit.door || 'driver', true, 0.22);
+      animateDoor(visual, exit.door || 'driver', false, 0.24, 0.92);
       gameMode = 'exiting';
       cameraRig.setOnFoot(true, character.state, visual);
       hud.setMode('foot');
@@ -346,8 +412,8 @@ export function createGame() {
     const parked = findNearestParkedVehicle(point, 5.6);
     const ownDistance = Math.hypot(point.x - state.x, point.z - state.z);
 
-    // Take the closest eligible vehicle. Street traffic is now physically removed from its lane,
-    // its driver exits as a pedestrian, and the traffic car becomes a player-controlled vehicle.
+    // Take the closest eligible vehicle. Street traffic is removed from its lane, its occupants
+    // exit through their assigned doors, and the vehicle becomes player-controlled.
     let choice = { kind: 'current', distance: ownDistance };
     if (parked && parked.distance < choice.distance) choice = { kind: 'parked', ...parked };
     if (street && street.distance < choice.distance) choice = { kind: 'street', ...street };
@@ -360,12 +426,12 @@ export function createGame() {
     if (choice.kind === 'street') {
       const stolen = traffic?.takeVehicle(choice.car);
       if (!stolen) return hud.toast('That vehicle is no longer available');
-      spawnStreetDriver(stolen);
-      activateStreetVehicle(stolen);
+      const takenVisual = activateStreetVehicle(stolen);
+      spawnStreetOccupants(stolen, takenVisual);
       startVehicleEntry(activeVehicleDef);
       gameMode = 'entering';
       hud.setInteract('Taking vehicle…', false);
-      hud.toast('Driver got out. Vehicle taken!');
+      hud.toast((stolen.occupants > 1 ? 'Occupants got out. ' : 'Driver got out. ') + 'Vehicle taken!');
       return;
     }
 
@@ -486,6 +552,7 @@ export function createGame() {
     }
 
     updateStreetDrivers(dt);
+    updateDoorAnimations(dt);
     player = activePlayer();
     if (traffic) {
       if (gameMode === 'vehicle') {
@@ -541,6 +608,6 @@ export function createGame() {
 
   if (params.has('debug')) window.__game = {
     update, colliders, get traffic() { return traffic; }, state, character, get gameMode() { return gameMode; },
-    save, get map() { return map; }, input, vehiclePhysics, cameraRig, stage, atmosphere, jobs, loadMap, MAPS, parkedVehicles, streetDrivers,
+    save, get map() { return map; }, input, vehiclePhysics, cameraRig, stage, atmosphere, jobs, loadMap, MAPS, parkedVehicles, streetDrivers, doorAnimations,
   };
 }

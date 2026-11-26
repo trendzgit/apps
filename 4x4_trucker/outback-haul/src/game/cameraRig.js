@@ -64,7 +64,9 @@ export class CameraRig {
     }
     if (enabled && player) {
       this.footYaw = player.h;
-      this.footPitch = 0.08;
+      // High, close follow angle: the camera sits above the player's head rather than
+      // several metres behind at normal third-person height.
+      this.footPitch = 0.18;
     }
     document.body.classList.toggle('cp', !enabled && this.mode > 1);
     document.body.classList.toggle('on-foot', enabled);
@@ -74,19 +76,25 @@ export class CameraRig {
 
   updateOnFoot(dt, player, heightAt) {
     const { camera } = this.stage;
-    const distance = 5.2;
-    const target = new Vector3(player.x, player.y + 1.18, player.z);
+    // Overhead third-person view: close enough to read the character, high enough to
+    // see pavements, doors and nearby traffic while moving around cars.
+    const followBack = 2.25;
+    const target = new Vector3(player.x, player.y + 1.15, player.z);
     const desired = new Vector3(
-      player.x - Math.sin(this.footYaw) * distance,
-      player.y + 2.55 + this.footPitch * 1.8,
-      player.z - Math.cos(this.footYaw) * distance,
+      player.x - Math.sin(this.footYaw) * followBack,
+      player.y + 6.7 + this.footPitch * 1.9,
+      player.z - Math.cos(this.footYaw) * followBack,
     );
-    desired.y = Math.max(desired.y, heightAt(desired.x, desired.z) + 1.15);
-    camera.position.lerp(desired, 1 - Math.exp(-7 * dt));
-    const lookTarget = target.clone().add(new Vector3(Math.sin(this.footYaw) * 1.2, this.footPitch * 1.4, Math.cos(this.footYaw) * 1.2));
+    desired.y = Math.max(desired.y, heightAt(desired.x, desired.z) + 2.6);
+    camera.position.lerp(desired, 1 - Math.exp(-8 * dt));
+    const lookTarget = target.clone().add(new Vector3(
+      Math.sin(this.footYaw) * 0.45,
+      this.footPitch * 0.55,
+      Math.cos(this.footYaw) * 0.45,
+    ));
     camera.lookAt(lookTarget);
     this.anchor.visible = false;
-    const fov = Math.min(82, Math.max(60, 114.6 * Math.atan(0.916 / camera.aspect)));
+    const fov = Math.min(72, Math.max(54, 114.6 * Math.atan(0.916 / camera.aspect)));
     if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix(); }
   }
 

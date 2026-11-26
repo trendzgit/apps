@@ -55,8 +55,11 @@ export class TrafficSystem {
       let r = this.rng() * totalWeight, type = 0;
       while (r > CAR_TYPES[type].weight) r -= CAR_TYPES[type++].weight;
       const t = CAR_TYPES[type];
+      const occupants = type >= 2
+        ? 1 + (this.rng() < 0.48 ? 1 : 0) // vans/trucks: driver, sometimes one passenger
+        : 1 + Math.floor(this.rng() * 4); // cars: one to four occupants
       this.cars.push({
-        type, len: t.length, wid: t.width,
+        type, len: t.length, wid: t.width, occupants,
         color: new Color(CAR_PAINT[(this.rng() * CAR_PAINT.length) | 0]),
         v0: (10 + this.rng() * 5) * t.speed,
         seg: null, u: 0, v: 0, out: 0, claim: null, release: null,
@@ -316,6 +319,7 @@ export class TrafficSystem {
     if (!car || !car.seg || car.stolen) return null;
     const result = {
       type: car.type,
+      occupants: car.occupants || 1,
       x: car.x, z: car.z, h: car.h,
       length: car.len, width: car.wid,
       color: car.color.getHex(),
