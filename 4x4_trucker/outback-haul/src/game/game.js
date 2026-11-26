@@ -20,6 +20,7 @@ import { Minimap } from './minimap.js';
 import { CameraRig } from './cameraRig.js';
 import { JobSystem } from './jobs.js';
 import { MapSelect } from './mapSelect.js';
+import { TrafficSystem } from '../traffic/trafficSystem.js';
 
 /** Wires every system together and runs the main loop. */
 export function createGame() {
@@ -42,6 +43,8 @@ export function createGame() {
   /** The player's live state, written by VehiclePhysics each frame. */
   const state = { x: 0, z: 0, h: 0, v: 0, y: 0, ss: 0, hit: 0, land: 0, air: false };
   let map = null, mapGroup = null, mapRuntime = null, vehicleIndex = 0, visual = null, loading = false;
+  let traffic = null;
+  const playerInfo = { x: 0, z: 0, h: 0, v: 0, length: 4.4, width: 1.8 }; // what the traffic AI needs to know about you
 
   // ---- vehicles ---------------------------------------------------------------------------
   function selectVehicle(index) {
@@ -76,6 +79,7 @@ export function createGame() {
     disposeTree(mapGroup);
     colliders.clear();
     mapGroup = mapRuntime = null;
+    traffic = null;
     jobs.cancel(true);
   }
 
@@ -108,6 +112,14 @@ export function createGame() {
       Object.assign(state, { x: map.spawn.x, z: map.spawn.z, h: map.spawn.h, v: 0, ss: 0 });
       if (!save.owned[vehicleIndex]) vehicleIndex = save.owned.findIndex(Boolean);
       selectVehicle(vehicleIndex);
+      // ?traffic=N overrides the car count (0 = none); low quality uses fewer cars by default
+      const wanted = params.has('traffic') ? Math.max(0, parseInt(params.get('traffic'), 10) || 0) : null;
+      const count = wanted ?? Math.round((map.traffic?.count ?? 0) * (LOW_QUALITY ? 0.6 : 1));
+      if (map.traffic && count > 0) {
+        traffic = new TrafficSystem({ config: { ...map.traffic, count }, group: mapGroup, colliders, onHonk: (d) => audio.honk(d) });
+        Object.assign(playerInfo, { x: state.x, z: state.z, h: state.h, v: 0 });
+        traffic.populate(playerInfo);
+      }
       hud.toast(map.name + ': free roam. Tap 📦 for an optional delivery job');
       $('loading').style.display = 'none';
       loading = false;
@@ -162,7 +174,11 @@ export function createGame() {
     const surface = map.surfaces[map.surfaceAt(state.x, state.z)];
     const throttle = input.held.g;
 
-    vehiclePhysics.step(def, visual, state, input.drive, surface, dt, colliders, map);
+    vehiclePhysics.step(def, visual, state, input.drive, surface, dt, colliders, map, traffic);
+    if (traffic) {
+      Object.assign(playerInfo, { x: state.x, z: state.z, h: state.h, v: state.v, length: def.length, width: def.width });
+      traffic.update(dt, playerInfo);
+    }
     if (state.hit > 2 || state.land > 3) {
       const force = Math.max(state.hit, state.land);
       audio.thud(force);
@@ -174,6 +190,7 @@ export function createGame() {
 
     atmosphere.update(dt, state);
     visual.lamp.intensity = atmosphere.night * 1.6;
+    traffic?.setNight(atmosphere.night);
     mapRuntime?.update?.(dt, { night: atmosphere.night });
 
     hud.setClock(atmosphere.clockText);
@@ -205,5 +222,5 @@ export function createGame() {
   if (direct && MAPS.some((m) => m.id === direct)) loadMap(getMap(direct));
   else mapSelect.show(null);
 
-  if (params.has('debug')) window.__game = { update, colliders, state, save, get map() { return map; }, input, vehiclePhysics, cameraRig, stage, atmosphere, jobs, loadMap, MAPS };
+  if (params.has('debug')) window.__game = { update, colliders, get traffic() { return traffic; }, state, save, get map() { return map; }, input, vehiclePhysics, cameraRig, stage, atmosphere, jobs, loadMap, MAPS };
 }

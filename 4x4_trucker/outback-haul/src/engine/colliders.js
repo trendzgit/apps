@@ -55,39 +55,38 @@ export class ColliderGrid {
 
 const EMPTY = [];
 
-/**
- * Push `pos` (x/z) out of any collider and bounce `vel`. Returns the impact speed (0 if none).
- * Same response as the original game: radius = vehicle half-width + 0.4, 1.4x velocity reflection.
- */
-export function resolveColliders(grid, pos, vel, radius) {
+const _p = { x: 0, z: 0 };
+
+/** Push one sample point out of every static collider near it and bounce `vel`. Returns impact speed. */
+function resolvePoint(grid, p, vel, radius) {
   let hit = 0;
-  for (const c of grid.query(pos.x, pos.z)) {
+  for (const c of grid.query(p.x, p.z)) {
     let nx, nz;
     if (c.t === 0) {
       const R = c.r + radius;
-      const dx = pos.x - c.x, dz = pos.z - c.z;
+      const dx = p.x - c.x, dz = p.z - c.z;
       const d2 = dx * dx + dz * dz;
       if (d2 >= R * R) continue;
       const d = Math.sqrt(d2) || 1;
       nx = dx / d; nz = dz / d;
-      pos.x = c.x + nx * R;
-      pos.z = c.z + nz * R;
+      p.x = c.x + nx * R;
+      p.z = c.z + nz * R;
     } else {
-      const cx = Math.max(c.x - c.hw, Math.min(c.x + c.hw, pos.x));
-      const cz = Math.max(c.z - c.hd, Math.min(c.z + c.hd, pos.z));
-      const dx = pos.x - cx, dz = pos.z - cz;
+      const cx = Math.max(c.x - c.hw, Math.min(c.x + c.hw, p.x));
+      const cz = Math.max(c.z - c.hd, Math.min(c.z + c.hd, p.z));
+      const dx = p.x - cx, dz = p.z - cz;
       const d2 = dx * dx + dz * dz;
       if (d2 >= radius * radius) continue;
       if (d2 > 1e-8) {
         const d = Math.sqrt(d2);
         nx = dx / d; nz = dz / d;
-        pos.x = cx + nx * radius;
-        pos.z = cz + nz * radius;
+        p.x = cx + nx * radius;
+        p.z = cz + nz * radius;
       } else {
         // centre is inside the box: leave through the nearest face
-        const px = c.hw - Math.abs(pos.x - c.x), pz = c.hd - Math.abs(pos.z - c.z);
-        if (px < pz) { nx = pos.x >= c.x ? 1 : -1; nz = 0; pos.x = c.x + nx * (c.hw + radius); }
-        else { nz = pos.z >= c.z ? 1 : -1; nx = 0; pos.z = c.z + nz * (c.hd + radius); }
+        const px = c.hw - Math.abs(p.x - c.x), pz = c.hd - Math.abs(p.z - c.z);
+        if (px < pz) { nx = p.x >= c.x ? 1 : -1; nz = 0; p.x = c.x + nx * (c.hw + radius); }
+        else { nz = p.z >= c.z ? 1 : -1; nx = 0; p.z = c.z + nz * (c.hd + radius); }
       }
     }
     const vn = vel.x * nx + vel.z * nz;
@@ -96,6 +95,25 @@ export function resolveColliders(grid, pos, vel, radius) {
       vel.z -= 1.4 * vn * nz;
       hit = Math.max(hit, -vn);
     }
+  }
+  return hit;
+}
+
+/**
+ * Vehicle-vs-world collision. The vehicle is a capsule along its heading: three circles of `radius`
+ * (centre, nose, tail) so a long car can't poke its bumper through a wall. Mutates `pos` and `vel`
+ * (x/z only) and returns the strongest impact speed (0 if nothing was hit).
+ */
+export function resolveColliders(grid, pos, vel, radius, heading = 0, halfLength = 0) {
+  const reach = Math.max(0, halfLength - radius);
+  const fx = Math.sin(heading), fz = Math.cos(heading);
+  let hit = 0;
+  for (const off of reach > 0.2 ? [0, reach, -reach] : [0]) {
+    const sx = pos.x + fx * off, sz = pos.z + fz * off;
+    _p.x = sx; _p.z = sz;
+    hit = Math.max(hit, resolvePoint(grid, _p, vel, radius));
+    pos.x += _p.x - sx;
+    pos.z += _p.z - sz;
   }
   return hit;
 }

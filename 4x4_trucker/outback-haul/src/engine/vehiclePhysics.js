@@ -87,8 +87,9 @@ export class VehiclePhysics {
    * @param surface  the surface under the car (grip, drag, ...)
    * @param colliders ColliderGrid of the current map
    * @param map      current map ({bound, heightAt})
+   * @param traffic  optional TrafficSystem (moving obstacles)
    */
-  step(def, visual, state, input, surface, dt, colliders, map) {
+  step(def, visual, state, input, surface, dt, colliders, map, traffic = null) {
     const chassis = this.chassis, vehicle = this.vehicle;
     const q = chassis.quaternion;
     const mass = chassis.mass;
@@ -121,8 +122,11 @@ export class VehiclePhysics {
     const pos = chassis.position;
     const vel = chassis.velocity;
 
-    // obstacles + world bounds
-    state.hit = resolveColliders(colliders, pos, vel, def.width / 2 + 0.4);
+    // obstacles (static colliders + moving traffic) and world bounds
+    const heading = Math.atan2(q.vmult(_axisZ, _fwd).x, _fwd.z);
+    const radius = def.width / 2 + 0.4;
+    state.hit = resolveColliders(colliders, pos, vel, radius, heading, def.length / 2);
+    if (traffic) state.hit = Math.max(state.hit, traffic.resolve(pos, vel, radius, heading, def.length / 2));
     const b = map.bound;
     if (Math.abs(pos.x) > b) { pos.x = Math.sign(pos.x) * b; vel.x = 0; }
     if (Math.abs(pos.z) > b) { pos.z = Math.sign(pos.z) * b; vel.z = 0; }

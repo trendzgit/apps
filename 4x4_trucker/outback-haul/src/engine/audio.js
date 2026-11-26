@@ -74,6 +74,29 @@ export class EngineAudio {
     src.start(t, Math.random(), 0.45);
   }
 
+  /** Two-tone car horn; quieter the further away the car is. */
+  honk(distance = 0) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const gain = this.ctx.createGain();
+    const filter = this._filter('lowpass', 1800);
+    const peak = 0.16 / (1 + distance / 25);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(peak, t + 0.02);
+    gain.gain.setValueAtTime(peak, t + 0.28);
+    gain.gain.linearRampToValueAtTime(0, t + 0.34);
+    filter.connect(gain);
+    gain.connect(this.master);
+    for (const f of [415, 523]) {
+      const o = this.ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.value = f;
+      o.connect(filter);
+      o.start(t);
+      o.stop(t + 0.36);
+    }
+  }
+
   toggleMute() {
     this.muted = !this.muted;
     if (this.master) this.master.gain.value = this.muted ? 0 : 0.6;

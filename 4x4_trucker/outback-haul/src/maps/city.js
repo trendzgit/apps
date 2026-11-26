@@ -337,6 +337,8 @@ export default {
     { name: 'Pavement', grip: 1.05, drag: 1.1, shake: 0.006, dust: null, tireFreq: 1700, tireGain: 0.7 },
     { name: 'Grass', grip: 0.85, drag: 1.7, shake: 0.02, dust: 0x8a9a5a, tireFreq: 400, tireGain: 0.8 },
   ],
+  /** ambient traffic: a lane graph over the road grid (see src/traffic/) */
+  traffic: { kind: 'grid', pitch: PITCH, roadWidth: ROAD, min: -5, max: 5, count: 42, laneOffset: 3 },
   heightAt: () => 0,
   surfaceAt,
   minimapColor,

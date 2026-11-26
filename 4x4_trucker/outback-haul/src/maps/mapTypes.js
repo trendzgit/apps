@@ -27,6 +27,8 @@
  * @property {{x:number,z:number,h:number,name:string}} spawn   start / "home" position
  * @property {Location[]} locations      job pickup/drop-off points (min 2)
  * @property {Partial<import('../game/jobs.js').DEFAULT_ECONOMY>} [economy]
+ * @property {{kind:'grid',pitch:number,roadWidth:number,min:number,max:number,count?:number,laneOffset?:number}} [traffic]
+ *     ambient traffic for grid road layouts (see src/traffic/); omit for no traffic
  * @property {Object} [atmosphere]       overrides for engine/atmosphere.js DEFAULT_ATMOSPHERE
  * @property {Surface[]} surfaces
  * @property {(x:number,z:number)=>number} heightAt     terrain height (m)
