@@ -5,9 +5,9 @@ import {
 import { resolveColliders } from '../engine/colliders.js';
 
 const RADIUS = 0.34;
-const WALK_SPEED = 2.35;
-const RUN_SPEED = 4.6;
-const BACK_SPEED = 1.55;
+const WALK_SPEED = 3.0;
+const RUN_SPEED = 7.0;
+const BACK_SPEED = 2.0;
 
 /**
  * Lightweight, asset-free third-person character. The articulated low-poly rig is deliberately
@@ -104,12 +104,12 @@ export class CharacterController {
     a.time = Math.min(a.duration, a.time + dt);
     const p = a.time / a.duration;
     const eased = p * p * (3 - 2 * p);
-    if (a.kind === 'exit') {
+    if (a.kind === 'exit' || a.kind === 'enter') {
       this.state.x = a.x + a.moveX * eased;
       this.state.z = a.z + a.moveZ * eased;
       this.state.y = map.heightAt(this.state.x, this.state.z);
       this.root.position.set(this.state.x, this.state.y, this.state.z);
-      this.root.scale.setScalar(Math.max(0.05, Math.min(1, p * 5)));
+      if (a.kind === 'exit') this.root.scale.setScalar(Math.max(0.05, Math.min(1, p * 5)));
     }
     this._animate(dt, a.kind === 'enter' ? 0.75 : 0.55, false, a.kind, p);
     if (p >= 1) {
@@ -147,7 +147,10 @@ export class CharacterController {
     const heading = Math.atan2(vel.x, vel.z);
     resolveColliders(colliders, pos, vel, RADIUS, heading, 0);
     if (traffic) traffic.resolve(pos, vel, RADIUS, heading, 0);
-    if (vehicleObstacle) this._resolveVehicle(pos, vel, RADIUS, vehicleObstacle);
+    if (vehicleObstacle) {
+      const obstacles = Array.isArray(vehicleObstacle) ? vehicleObstacle : [vehicleObstacle];
+      for (const obstacle of obstacles) if (obstacle) this._resolveVehicle(pos, vel, RADIUS, obstacle);
+    }
 
     const bound = map.bound - RADIUS;
     pos.x = MathUtils.clamp(pos.x, -bound, bound);
@@ -195,7 +198,7 @@ export class CharacterController {
 
   _animate(dt, speed, sprint, action, progress) {
     const walking = speed > 0.18;
-    this.phase += dt * (walking ? (sprint ? 13.5 : 9.5) : 1.2);
+    this.phase += dt * (walking ? (sprint ? 17.5 : 10.5) : 1.2);
     const swing = walking ? Math.sin(this.phase) * Math.min(0.72, speed * 0.14) : Math.sin(this.phase) * 0.025;
     const crouch = action === 'enter' ? Math.sin(progress * Math.PI) * 0.42 : action === 'exit' ? (1 - progress) * 0.2 : 0;
     this.rig.torso.rotation.x = crouch * 0.55 + (walking ? Math.abs(swing) * 0.05 : 0);

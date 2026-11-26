@@ -6,7 +6,7 @@ single-file build into a readable, multi-map project.
 * **3 maps** - Outback (the original), Metro City (procedural city), Green Valley (farmland)
 * Deliver parcels, earn credits, level up **per map**, buy vehicles that work on **every** map
 * **Ambient traffic** on the City map: cars drive the road grid, obey traffic lights, turn at junctions, brake for you and honk
-* **On-foot exploration**: leave a stopped vehicle, walk or sprint in third person, and return to the driver seat with a proximity interaction
+* **On-foot exploration**: leave a stopped vehicle, walk or sprint (hold Shift, or hold the RUN / ⚡ control) in third person, and return to the driver seat with a proximity interaction
 * Day/night cycle, 4 camera views incl. a working cockpit with gauges and a rear-view mirror
 * Touch controls + keyboard. No asset files required.
 
@@ -40,7 +40,7 @@ src/
     colliders.js          spatial-hash of circle/box colliders
     audio.js  particles.js
   vehicles/
-    vehicleDefs.js        the 4 vehicles (stats + proportions)  <- add vehicles here
+    vehicleDefs.js        the 4 vehicles (Seltos-style SUV, Ute, Road Truck, Quad; stats + proportions)  <- add vehicles here
     vehicleModels.js      procedural models + optional .glb loader
     cockpit.js            interior, gauges, steering wheel
   game/
@@ -129,7 +129,7 @@ Cash and owned vehicles are shared; levels are per map. An old `outbackhaul1` sa
 
 ## Next steps (not built yet)
 
-Skinned character assets and authored animation clips, animated vehicle doors, jumping, NPC pedestrians, police/wanted system, weather, damage, more job types (taxi, races), vehicle upgrades, traffic for the rural maps.
+Skinned character assets and authored animation clips, animated vehicle doors, jumping, ambient pedestrian crowds, police/wanted system, weather, damage, more job types (taxi, races), vehicle upgrades, traffic for the rural maps.
 
 
 ## Gameplay roadmap status
@@ -137,3 +137,14 @@ Skinned character assets and authored animation clips, animated vehicle doors, j
 | Feature | Status | Description |
 |---|---|---|
 | Walking on foot, enter/exit cars | First playable implementation | This is the real jump from a driving game to GTA. It now has a third-person character controller, procedural locomotion animation, vehicle proximity interaction and enter/exit transitions. Authored animation clips and animated doors remain future polish. |
+
+
+## On-foot controls and street vehicles
+
+- Stop your current vehicle and press **E** to exit.
+- On foot, **WASD / arrow keys sprint by default**. Hold **Ctrl** on desktop (or the on-screen **WALK** button on mobile) to move at walking pace.
+- Move near a street vehicle and press **E** to take it. The ambient traffic car is removed from its lane, a procedural driver exits and runs away, and the player receives a drivable vehicle with the matching traffic type and paint.
+- Previously used player vehicles remain parked and can be entered again with **E**.
+- Street takeovers currently support sedan, hatchback, van, and truck traffic classes.
+
+Kenney Car Kit CC0 GLB vehicle body models are optional runtime enhancements; see [ASSET_SOURCES.md](./ASSET_SOURCES.md). Procedural meshes remain as a fallback if a remote model cannot load.

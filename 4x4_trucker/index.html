@@ -23,6 +23,7 @@
   </div>
   <div class="box" id="C"><span id="mapname"></span> · Lv <span id="lv">1</span> · <span id="cash">0</span> cr</div>
   <div class="box" id="msg"></div>
+  <div class="box" id="footHelp">WASD / arrows: move · DEFAULT SPRINT · hold CTRL / WALK button to walk · E near street car: take it</div>
 
   <div class="side">
     <button id="sw" aria-label="Switch vehicle">🚙</button>
@@ -47,13 +48,13 @@
 
   <!-- touch pads -->
   <div class="pad" style="left:calc(14px + env(safe-area-inset-left))"><button data-k="l">◀</button><button data-k="r">▶</button></div>
-  <div class="pad" style="right:calc(14px + env(safe-area-inset-right))"><button data-k="b" aria-label="Reverse or walk back">▼</button><button data-k="g" aria-label="Accelerate or walk forward">▲</button><button data-k="run" class="run-pad" aria-label="Sprint">⚡</button></div>
+  <div class="pad" style="right:calc(14px + env(safe-area-inset-right))"><button data-k="b" aria-label="Reverse or walk back">▼</button><button data-k="g" aria-label="Accelerate or walk forward">▲</button><button data-k="walk" class="walk-pad" aria-label="Hold to walk slowly">WALK</button></div>
 
   <!-- map select -->
   <div id="maps" class="screen" style="display:none">
     <div class="screen-inner">
       <h1>Outback Haul</h1>
-      <p class="sub">Choose a map. Cash and vehicles carry over; each map has its own level. Stop your vehicle and press E to get out. On foot, walk back to the vehicle and press E to get in. Use WASD / arrows to walk and Shift to sprint.</p>
+      <p class="sub">Choose a map. Cash and vehicles carry over; each map has its own level. Stop your vehicle and press E to get out. On foot, movement defaults to sprint. Hold Ctrl or the WALK button to walk slowly. Press E near your parked car to get in, or near a traffic car to take it after the driver exits.</p>
       <div id="mapList"></div>
       <p id="mapsClose" class="hint" style="display:none">Tap outside a card or press Esc to go back</p>
     </div>

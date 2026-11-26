@@ -139,9 +139,10 @@ export class TrafficSystem {
 
   update(dt, player) {
     this.time += dt;
-    for (const car of this.cars) if (car.seg) this._step(car, dt, player);
+    for (const car of this.cars) if (car.seg && !car.stolen) this._step(car, dt, player);
 
     for (const car of this.cars) { // keep the bubble populated / recover stuck cars
+      if (car.stolen) continue;
       const d = Math.hypot(car.x - player.x, car.z - player.z);
       if (!car.seg || d > this.bubble || (car.waited > 50 && d > 70) || car.waited > 120) {
         if (this.respawn(car, player, 150, this.bubble * 0.92, true)) car.waited = 0;
@@ -253,7 +254,7 @@ export class TrafficSystem {
       const ox = pos.x + hs * off, oz = pos.z + hc * off;
       let sx = ox, sz = oz;
       for (const car of this.cars) {
-        if (!car.seg) continue;
+        if (!car.seg || car.stolen) continue;
         const dx = sx - car.x, dz = sz - car.z;
         const R = car.len / 2 + radius + 0.5;
         if (dx * dx + dz * dz > R * R) continue;
@@ -292,12 +293,48 @@ export class TrafficSystem {
     return hit;
   }
 
+  /** Return the closest live street vehicle within interaction range. */
+  findNearestVehicle(player, maxDistance = 5.6) {
+    let best = null;
+    let bestDistance = maxDistance;
+    for (const car of this.cars) {
+      if (!car.seg || car.stolen) continue;
+      const distance = Math.hypot(car.x - player.x, car.z - player.z);
+      if (distance < bestDistance) {
+        best = car;
+        bestDistance = distance;
+      }
+    }
+    return best ? { car: best, distance: bestDistance } : null;
+  }
+
+  /**
+   * Remove a traffic vehicle from lane simulation and hand its transform/type/paint to the
+   * player. The caller creates the visible driver exit and the drivable vehicle body.
+   */
+  takeVehicle(car) {
+    if (!car || !car.seg || car.stolen) return null;
+    const result = {
+      type: car.type,
+      x: car.x, z: car.z, h: car.h,
+      length: car.len, width: car.wid,
+      color: car.color.getHex(),
+      speed: car.v,
+    };
+    this._leave(car);
+    car.seg = null;
+    car.stolen = true;
+    car.v = 0;
+    this.renderer.render(this.cars);
+    return result;
+  }
+
   setNight(n) { this.renderer.setNight(n); }
 
   /** Handy for debugging / tests. */
   stats() {
     let moving = 0, waiting = 0, inJunction = 0;
-    for (const c of this.cars) { if (c.v > 0.5) moving++; else waiting++; if (c.seg && c.seg.kind === 'conn') inJunction++; }
+    for (const c of this.cars) { if (c.stolen) continue; if (c.v > 0.5) moving++; else waiting++; if (c.seg && c.seg.kind === 'conn') inJunction++; }
     return { cars: this.cars.length, moving, waiting, inJunction };
   }
 }

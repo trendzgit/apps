@@ -1,5 +1,5 @@
 import {
-  Group, Mesh, Shape, ExtrudeGeometry, BoxGeometry, TorusGeometry, CylinderGeometry, Box3,
+  Group, Mesh, Shape, ExtrudeGeometry, BoxGeometry, TorusGeometry, CylinderGeometry, Box3, Vector3,
   MeshPhongMaterial, MeshBasicMaterial,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -109,30 +109,34 @@ function buildDetailedCar(def) {
  * Silently does nothing when it doesn't (404 or parse error).
  */
 export function tryLoadGlb(def, visual) {
+  const source = def.modelUrl || ('./models/' + def.model + '.glb');
   new GLTFLoader().load(
-    './models/' + def.model + '.glb',
+    source,
     (gltf) => {
       const model = gltf.scene;
       const box = new Box3().setFromObject(model);
-      const scale = def.length / (box.max.z - box.min.z);
+      const size = box.getSize(new Vector3());
+      const scaleX = def.width / Math.max(size.x, 0.001);
+      const scaleZ = def.length / Math.max(size.z, 0.001);
+      const scaleY = Math.min(scaleX, scaleZ);
       const wheelNodes = ['wheel_rr', 'wheel_fr', 'wheel_rl', 'wheel_fl'].map((n) => model.getObjectByName(n));
       const hasWheels = wheelNodes.every(Boolean);
 
-      // hide the procedural body, but keep cockpit meshes and (if the GLB has no wheels) our wheels
+      // The Kenney GLBs are complete vehicle models (including their own wheels),
+      // so hide all procedural body/wheel meshes but preserve the independent cockpit.
       const keep = new Set();
-      if (!hasWheels) visual.wheels.forEach((w) => w.traverse((o) => keep.add(o)));
       visual.cockpit?.traverse((o) => keep.add(o));
       visual.group.traverse((o) => {
         if (o.isMesh && !keep.has(o)) { o.visible = false; o.userData.hidden = true; }
       });
 
-      model.scale.setScalar(scale);
-      model.position.set(-((box.min.x + box.max.x) / 2) * scale, -box.min.y * scale, -((box.min.z + box.max.z) / 2) * scale);
+      model.scale.set(scaleX, scaleY, scaleZ);
+      model.position.set(-((box.min.x + box.max.x) / 2) * scaleX, -box.min.y * scaleY, -((box.min.z + box.max.z) / 2) * scaleZ);
       model.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       visual.group.add(model);
 
       if (hasWheels) {
-        wheelNodes.forEach((w) => { w.userData.baseY = w.position.y; w.userData.unit = 1 / scale; });
+        wheelNodes.forEach((w) => { w.userData.baseY = w.position.y; w.userData.unit = 1 / Math.max(scaleX, scaleZ); });
         visual.wheels = wheelNodes;
       }
     },

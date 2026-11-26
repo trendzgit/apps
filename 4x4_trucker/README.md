@@ -1,29 +1,29 @@
-# Outback Haul — local run and deployment
+# Outback Haul — Cloudflare Pages deployment
 
-The updated game entry page is `index.html`. Its modules and stylesheet live in `outback-haul/`.
-Keep the whole `4x4_trucker` folder together when copying or deploying it.
+The static game entry page is `index.html`. Its modules and stylesheet live in `outback-haul/`. Keep the complete `4x4_trucker` folder together when deploying; do not publish only the HTML file.
 
-## Run locally (no npm required)
+## Cloudflare Pages
 
-On Windows, double-click `start_game.bat`. It starts a small Python web server and opens:
+- Framework preset: **None**
+- Build command: **leave empty**
+- Build output directory: the repository root (or `.` when this folder is the project root)
+- Runtime: static HTML, CSS, and JavaScript modules; no npm build is required
 
-`http://127.0.0.1:8000/index.html`
-
-Alternatively, open PowerShell in this folder and run:
-
-```powershell
-python -m http.server 8000 --bind 127.0.0.1
-```
-
-Then visit `http://127.0.0.1:8000/index.html`.
-
-Do not double-click `index.html` to use `file://`; browsers commonly block JavaScript ES modules in that mode. No npm install or Vite build is needed for this CDN/import-map version. An internet connection is required to load Three.js and cannon-es from jsDelivr.
+The entry page uses an import map to load Three.js and cannon-es from jsDelivr. An internet connection is required. Selected Kenney vehicle body models are also loaded from public CC0 asset endpoints; if a remote model fails to load, the procedural vehicle body remains as a fallback.
 
 ## Controls
 
-- Stop the vehicle and press **E** to exit.
-- On foot, use **WASD** or **arrow keys** to walk; hold **Shift** to sprint.
-- Move back within interaction range of the parked vehicle and press **E** to enter.
+- Stop your current vehicle and press **E** to exit.
+- On foot, movement defaults to **sprint**. Use **WASD** or **arrow keys**; hold **Ctrl** to walk more slowly.
+- Press **E** beside your parked player vehicle to get back in.
+- Press **E** beside a street vehicle to take it. The driver exits and runs away; the vehicle is removed from traffic and becomes player-controlled.
+- Previously used player vehicles remain parked in the world and can be re-entered.
 - Drag the mouse on the scene to orbit the on-foot camera.
 
-To deploy to Cloudflare Pages, publish the complete contents of this `4x4_trucker` directory, not just `index.html`.
+## Available player vehicles
+
+The garage catalogue includes a Seltos-style SUV (starting vehicle), Ute (300 cr), Road Truck (700 cr), and Quad (1,000 cr). Ambient street traffic includes sedans, hatchbacks, vans, and trucks that can be taken over on foot. Earn credits through delivery jobs, buy garage vehicles with the 🛒 button, and use 🚙 to cycle through vehicles you own. Garage ownership is saved in the browser.
+
+## Open-source vehicle assets
+
+Selected body models use Kenney Car Kit GLB assets (CC0 1.0) served from Flockbay's direct asset URLs. See `outback-haul/ASSET_SOURCES.md` for specific models, source pages, and licence notes. Attribution is not required; optional credit is included there.

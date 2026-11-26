@@ -18,7 +18,11 @@ export class Hud {
   setMapName(name) { this.el.mapName.textContent = name; }
   setStats(level, cash) { this.el.level.textContent = level; this.el.cash.textContent = cash; }
   setHomeLabel(name) { this.el.home.setAttribute('aria-label', 'Back to ' + name); }
-  setMode(mode) { this.el.mode.textContent = mode === 'foot' ? 'ON FOOT' : 'DRIVING'; }
+  setMode(mode) {
+    const onFoot = mode === 'foot';
+    this.el.mode.textContent = onFoot ? 'ON FOOT' : 'DRIVING';
+    document.body.classList.toggle('on-foot', onFoot);
+  }
   setInteract(label, visible) {
     this.el.interact.textContent = label;
     this.el.interact.classList.toggle('visible', !!visible);

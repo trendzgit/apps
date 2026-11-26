@@ -12,7 +12,7 @@ const KEYS = {
 /** Keyboard + on-screen pads. The same directions drive the vehicle or move the character. */
 export class Input {
   constructor() {
-    this.held = { l: 0, r: 0, g: 0, b: 0, run: 0 };
+    this.held = { l: 0, r: 0, g: 0, b: 0, run: 0, walk: 0 };
     this.actions = new Map();
 
     document.querySelectorAll('[data-k]').forEach((btn) => {
@@ -36,8 +36,12 @@ export class Input {
       const key = e.key || '';
       const code = e.code || '';
       const direction = KEYS[code] || KEYS[key] || KEYS[key.toLowerCase()];
-      if (direction) this.held[direction] = 1;
-      if (key === 'Shift' || code === 'ShiftLeft' || code === 'ShiftRight') this.held.run = 1;
+      if (direction) {
+        this.held[direction] = 1;
+        if (e.ctrlKey) e.preventDefault(); // keep Ctrl+W walking from triggering the browser's close-tab shortcut
+      }
+      if (key === 'Shift' || code.startsWith('Shift')) this.held.run = 1;
+      if (key === 'Control' || code.startsWith('Control')) { this.held.walk = 1; e.preventDefault(); }
 
       if (e.repeat) return;
       const action = this.actions.get(code) || this.actions.get(key.toLowerCase());
@@ -52,7 +56,8 @@ export class Input {
       const code = e.code || '';
       const direction = KEYS[code] || KEYS[key] || KEYS[key.toLowerCase()];
       if (direction) this.held[direction] = 0;
-      if (key === 'Shift' || code === 'ShiftLeft' || code === 'ShiftRight') this.held.run = 0;
+      if (key === 'Shift' || code.startsWith('Shift')) this.held.run = 0;
+      if (key === 'Control' || code.startsWith('Control')) this.held.walk = 0;
     };
 
     window.addEventListener('keydown', this._keyDown, true);
