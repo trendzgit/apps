@@ -183,6 +183,12 @@ export class TrafficSystem {
       for (const c of out.cars) consider(rem + c.u - c.len / 2, c.v);
     }
 
+    // Pedestrians are obstacles too: AI cars slow before a person crossing their lane.
+    if (this.peds) {
+      const pedGap = this.peds.gapAhead(car.x, car.z, fs, fc, car.wid, car.len, 22);
+      if (pedGap < gap) consider(pedGap, 0, false);
+    }
+
     // the player is an obstacle if they're in our lane ahead of us
     const fs = Math.sin(car.h), fc = Math.cos(car.h);
     const px = player.x - car.x, pz = player.z - car.z;

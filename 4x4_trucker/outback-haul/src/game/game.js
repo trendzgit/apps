@@ -22,6 +22,7 @@ import { CharacterController } from './characterController.js';
 import { JobSystem } from './jobs.js';
 import { MapSelect } from './mapSelect.js';
 import { TrafficSystem } from '../traffic/trafficSystem.js';
+import { PedestrianSystem } from '../pedestrians/pedestrianSystem.js';
 
 /** Wires every system together and runs the main loop. */
 export function createGame() {
@@ -45,7 +46,7 @@ export function createGame() {
   /** The vehicle's live state, written by VehiclePhysics each frame. */
   const state = { x: 0, z: 0, h: 0, v: 0, y: 0, ss: 0, hit: 0, land: 0, air: false };
   let map = null, mapGroup = null, mapRuntime = null, vehicleIndex = 0, visual = null, loading = false;
-  let traffic = null;
+  let traffic = null, pedestrians = null;
   let activeVehicleDef = VEHICLES[0];
   const parkedVehicles = [];
   const streetDrivers = [];
@@ -276,6 +277,7 @@ export function createGame() {
     colliders.clear();
     mapGroup = mapRuntime = null;
     traffic = null;
+    pedestrians = null;
     jobs.cancel(true);
   }
 
@@ -320,6 +322,21 @@ export function createGame() {
         traffic = new TrafficSystem({ config: { ...map.traffic, count }, group: mapGroup, colliders, onHonk: (d) => audio.honk(d) });
         Object.assign(playerInfo, { x: state.x, z: state.z, h: state.h, v: 0 });
         traffic.populate(playerInfo);
+        const pedCount = params.has('peds') ? Math.max(0, parseInt(params.get('peds'), 10) || 0) : (map.pedestrians?.count ?? 0);
+        if (map.pedestrians && pedCount > 0) {
+          pedestrians = new PedestrianSystem({
+            config: { ...map.traffic, ...map.pedestrians, count: pedCount },
+            traffic, group: mapGroup, colliders,
+            onHit: () => {
+              save.cash = Math.max(0, save.cash - (map.pedestrians.fine ?? 50));
+              hud.setStats(mapProgress(save, map.id).level, save.cash);
+              hud.toast('Pedestrian collision: fine applied');
+              persist(save);
+            },
+          });
+          pedestrians.populate(playerInfo);
+          traffic.peds = pedestrians;
+        }
       }
       hud.toast('Free roam. Stop and press E to exit; press E beside your vehicle to enter.');
       $('loading').style.display = 'none';
@@ -561,6 +578,13 @@ export function createGame() {
         Object.assign(playerInfo, { x: player.x, z: player.z, h: player.h, v: player.v, length: 0.8, width: 0.7 });
       }
       traffic.update(dt, playerInfo);
+      if (pedestrians) {
+        if (gameMode === 'vehicle') {
+          const vel = { x: Math.sin(state.h) * state.v, z: Math.cos(state.h) * state.v };
+          pedestrians.resolve(state, vel, activeVehicleDef.width * 0.5, state.h, activeVehicleDef.length);
+        }
+        pedestrians.update(dt, playerInfo);
+      }
     }
 
     atmosphere.update(dt, player);

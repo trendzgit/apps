@@ -148,3 +148,41 @@ Ambient pedestrian crowds, authored skinned animation clips, jumping, police/wan
 - Street takeovers currently support sedan, hatchback, van, and truck traffic classes.
 
 Kenney Car Kit CC0 GLB vehicle body models are optional runtime enhancements; see [ASSET_SOURCES.md](./ASSET_SOURCES.md). Procedural meshes remain as a fallback if a remote model cannot load.
+
+### Scenic Outback v2 landscape pass
+
+The Outback map's terrain profile has been tuned toward broader, smoother rolling terrain. Gum-tree silhouettes now use smaller, offset foliage clusters and slimmer trunks to reduce the oversized rounded canopy look. This is a visual tuning pass; browser gameplay has not been verified.
+
+
+### Scenic Outback v4 - trees and landscape depth
+
+The Outback scenery pass keeps the v3 road network and changes only the environment dressing:
+
+* Eucalyptus-style trees now use tapered trunks, spreading limbs, seven varied canopy clusters, and per-instance foliage colour variation.
+* Vegetation is placed in loose groves mixed with isolated trees, rather than a uniform scatter.
+* Rounded native scrub and smaller grass blades replace the large triangular tufts.
+* Three distant ridge layers add depth to the horizon.
+* Ground texture repetition and bump strength are reduced, and Outback daylight/fog colours are tuned for a clearer blue-sky landscape.
+* The scene is still generated procedurally; it does not download external models or textures and remains suitable for static hosting.
+
+This is a code-validated scenery update. Inspect it in the browser and tune from gameplay screenshots before treating the visual result as final.
+
+### Scenic Outback v5 - CC0 asset-based scenery
+
+The Outback map now attempts to replace its procedural tree, shrub, grass and rock primitives with selected textured Quaternius Stylized Nature MegaKit glTF models. The selected models are from the CC0 asset folder in The Wild Between repository; its MIT game code is not included. Models are instanced by category to limit draw calls. The original procedural models remain as category-level fallbacks and are hidden only after the full corresponding asset set has loaded successfully.
+
+The asset integration keeps the existing map terrain, road network, vehicle positioning, driving physics, traffic and pedestrian systems unchanged. It loads selected nature models over HTTPS from jsDelivr, so an internet connection is required for the detailed asset models. If remote loading fails, the procedural fallback scenery remains visible. See `ASSET_SOURCES.md` for model names, source and licensing details.
+
+
+### Scenic Outback v6 - open-source world object integration
+
+The Outback map now supplements its nature scenery with a curated selection of CC0 Kenney GLB models from the shared `Hidencod/tge-assets` library: additional tree silhouettes, rural fences and gates, crop rows, fallen logs, utility poles, warning/street signs, small town buildings, parked scenery vehicles, horses, dogs, dumpsters and construction barriers. The runtime loader is `src/maps/builders/libraryAssets.js`; matching models are batched into instanced meshes. Model files remain on the jsDelivr mirror and are fetched at runtime, so an internet connection is required. The full 1,883-model catalog is not loaded; only the small subset listed in `ASSET_SOURCES.md` is requested.
+
+This is an object-dressing upgrade only. Existing Outback road geometry and routes, vehicle spawn and player vehicle, vehicle physics, traffic, pedestrians, map dimensions and gameplay remain unchanged. The new parked cars are scenery and are not registered with traffic AI. Building colliders are added as static town obstacles. If a decorative model category fails to load, the game map should continue to load; the existing procedural tree meshes remain the fallback for the Kenney tree category.
+
+For asset credits, model names, hosting and CC0 notes, see [ASSET_SOURCES.md](./ASSET_SOURCES.md).
+
+
+### Scenic Outback v6.1 — tree silhouette correction
+
+The Outback tree mix now uses only the slim/tall CC0 Kenney nature models, scaled narrower and slightly smaller. Broad round default/oak tree variants have been removed from this biome. Its procedural fallback now uses smaller elongated foliage clusters and a more open branch pattern. Road geometry, vehicle spawn and gameplay systems are unchanged.

@@ -339,6 +339,7 @@ export default {
   ],
   /** ambient traffic: a lane graph over the road grid (see src/traffic/) */
   traffic: { kind: 'grid', pitch: PITCH, roadWidth: ROAD, min: -5, max: 5, count: 42, laneOffset: 3 },
+  pedestrians: { count: 55, bubble: 180, fine: 50 },
   heightAt: () => 0,
   surfaceAt,
   minimapColor,

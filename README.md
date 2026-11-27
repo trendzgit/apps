@@ -1,22 +1,19 @@
-# Personal Apps
+# Outback Haul - Scenic Outback v6.1 Tree Silhouette Update
 
-This repository contains small standalone applications. `4x4_trucker/` hosts **Outback Haul**, a Three.js + cannon-es open-world driving game.
+This package builds on Outback Haul v6 and preserves its road network, SUV positioning and handling, physics, traffic, pedestrians, farm/town objects and Cloudflare static deployment layout.
 
-## Deploy Outback Haul on Cloudflare Pages
+The Outback tree selection has been corrected: broad Kenney `tree-default`, `tree-detailed` and `tree-oak` models have been removed from this biome. The map now selects only the narrower `tree-thin` and `tree-tall` CC0 models and scales them vertically with reduced horizontal width. The procedural fallback has also been revised to use slimmer trunks, finer branches and smaller elongated foliage clusters, with fewer trees and more open spacing.
 
-Deploy the repository as static files. No build command is required for the Cloudflare-ready entry point. Keep the complete `4x4_trucker/` folder and its `outback-haul/` source folder together. The game loads Three.js and cannon-es from jsDelivr and optional Kenney GLB vehicle models from public asset endpoints, so visitors need an internet connection.
+Other world objects introduced in v6 remain unchanged. The selected tree and prop models load from the existing jsDelivr mirror and require internet access. If model loading fails, the reshaped procedural tree fallback remains available.
 
-Game URL after deployment: `/4x4_trucker/`
+## Local test
 
-## On-foot and street-vehicle controls
+From this package's `4x4_trucker` directory:
 
-- Stop and press **E** to exit your current vehicle.
-- On foot, **WASD / arrow keys sprint by default**. Hold **Ctrl** on desktop or hold the on-screen **WALK** button on mobile to walk.
-- Approach a street vehicle and press **E** to take it. Its traffic instance is removed, one to four occupants (depending on vehicle class) exit through animated doors and flee, and the vehicle becomes player-controlled.
-- The on-foot camera sits high above and just behind the player. Vehicle doors animate on exit, entry and street takeovers.
-- Pedestrians have varied clothing, skin tones, caps and backpacks; sedans and hatchbacks can carry up to four occupants.
-- Previously used vehicles remain parked and can be entered again with **E**.
+```bash
+py -m http.server 8000
+```
 
-## Vehicle assets
+Open `http://localhost:8000/?map=outback`. Deploy the complete `4x4_trucker` folder as a static Cloudflare Pages project.
 
-The game uses optional Kenney Car Kit vehicle models, licensed CC0 1.0, with procedural vehicle meshes as a fallback. Model sources and licence notes are in [`4x4_trucker/outback-haul/ASSET_SOURCES.md`](./4x4_trucker/outback-haul/ASSET_SOURCES.md).
+JavaScript syntax and relative-import checks are passed. Browser visual testing is not claimed. Asset names, origin and licenses are documented in `4x4_trucker/outback-haul/ASSET_SOURCES.md`.

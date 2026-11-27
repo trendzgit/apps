@@ -28,3 +28,19 @@ The garage catalogue includes a Seltos-style SUV (starting vehicle), Ute (300 cr
 ## Open-source vehicle assets
 
 Selected body models use Kenney Car Kit GLB assets (CC0 1.0) served from Flockbay's direct asset URLs. See `outback-haul/ASSET_SOURCES.md` for specific models, source pages, and licence notes. Attribution is not required; optional credit is included there.
+
+
+## Open-source Outback nature scenery
+
+Outback v5 loads selected CC0 Quaternius nature models (trees, bushes, grasses and rocks) from the public `assets/quaternius-nature/` folder in The Wild Between repository. The game's existing procedural scenery is retained as a fallback if external assets fail to load. The asset loader creates InstancedMeshes using the existing Three.js r128 stack; there is no new npm dependency or build step for the static route. An internet connection is needed for the detailed nature models. Model names and separate asset licensing are documented in `outback-haul/ASSET_SOURCES.md`.
+
+## Open-source Outback world objects (v6)
+
+Scenic Outback v6 uses a curated group of 25 Kenney CC0 GLB model variants from the nature, city roads, suburban, car and prototype packs. Added scenery includes four tree models, rural fence panels and gates, power poles, three road-sign types, four small building styles, parked farm/town vehicles, horses, dogs, wheat crops, fallen logs and town utility details. The game requests only this selected subset from the public `Hidencod/tge-assets` jsDelivr mirror; it does not download or load the full 1,883-model catalog. See `outback-haul/ASSET_SOURCES.md` for model paths, asset origins and licence notes.
+
+These are scenery objects, not replacements for the player SUV or traffic system. Existing road routes and geometry, driving physics, traffic, pedestrians and vehicle placement are retained. The assets are loaded asynchronously; if a category cannot be fetched, it is omitted (and the original procedural tree meshes remain available as a fallback). Internet access is required for the remote GLB models.
+
+
+## Outback v6.1 tree silhouette correction
+
+The Outback map removes Kenney's broad `tree-default`, `tree-detailed` and `tree-oak` models from the main tree mix. It now selects `tree-thin` and `tree-tall`, applies reduced horizontal scale and lower overall size, and reduces tree density for a more open Australian woodland. The fallback tree geometry was also changed from seven large spherical crown lobes to smaller elongated foliage clusters on lighter, branching trunks. Road geometry, player vehicle position and driving systems are unchanged.
